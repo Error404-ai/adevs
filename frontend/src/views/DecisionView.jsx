@@ -137,8 +137,7 @@ export default function DecisionView({ config, date, setDate, cutoff }) {
                          tick={{ fill: "#5B6B7B", fontSize: 12 }} />
                   <YAxis domain={[0, (m) => Math.ceil(m / 2000) * 2000]} tickLine={false} axisLine={false}
                          width={56} tick={{ fill: "#5B6B7B", fontSize: 12 }}
-                         tickFormatter={(v) => mw(v)}
-                         label={{ value: "MW", position: "insideTopLeft", offset: -4, fill: "#5B6B7B", fontSize: 12 }} />
+                         tickFormatter={(v) => mw(v)} />
                   <Tooltip content={<DecisionTooltip />} />
                   {view.hasBand && (
                     <Area dataKey="band" stroke="none" fill={COLORS.band} fillOpacity={0.14}
