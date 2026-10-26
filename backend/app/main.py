@@ -5,10 +5,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from . import analysis
 
-DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).resolve().parents[2] / "data"))
+ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = Path(os.getenv("DATA_DIR", ROOT / "data"))
+FRONTEND_DIST = Path(os.getenv("FRONTEND_DIST", ROOT / "frontend" / "dist"))
 
 actuals, forecasts = analysis.load_frames(
     json.loads((DATA_DIR / "actuals.json").read_text(encoding="utf-8")),
@@ -78,3 +81,8 @@ def error_by_hour(cutoff_hour: int = Query(analysis.DEFAULT_CUTOFF_HOUR, ge=0, l
 @app.get("/api/error-by-level")
 def error_by_level(cutoff_hour: int = Query(analysis.DEFAULT_CUTOFF_HOUR, ge=0, le=23)):
     return analysis.error_by_level(_table(cutoff_hour))
+
+
+if FRONTEND_DIST.is_dir():
+    # Registered last so /api/* keeps matching the routes above.
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

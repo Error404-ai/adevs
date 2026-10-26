@@ -106,7 +106,8 @@ export default function DecisionView({ config, date, setDate, cutoff }) {
               {view.firstPub === view.lastPub
                 ? dateTime(view.firstPub)
                 : `${dateTime(view.firstPub)} to ${dateTime(view.lastPub)}`}
-              , the latest available before the order.
+              , the latest available before the order. Actual generation is shown for this
+              retrospective pilot; it is not known at decision time.
             </p>
           </div>
 
@@ -114,7 +115,7 @@ export default function DecisionView({ config, date, setDate, cutoff }) {
             { label: "Average forecast", value: mw(view.avgForecast), unit: "MW" },
             { label: "Highest forecast", value: mw(view.peak.forecast), unit: "MW", hint: `at ${view.peak.time}` },
             { label: "Lowest forecast", value: mw(view.low.forecast), unit: "MW", hint: `at ${view.low.time}` },
-            { label: "Actual average", value: mw(view.avgActual), unit: "MW", hint: "what was generated" },
+            { label: "Actual average", value: mw(view.avgActual), unit: "MW", hint: "after delivery, not known at order time" },
             {
               label: "Forecast error", unit: "MW",
               value: signedMw(data.day_metrics.bias),
@@ -125,8 +126,8 @@ export default function DecisionView({ config, date, setDate, cutoff }) {
 
           <Panel>
             <Legend items={[
-              { label: "Forecast", color: COLORS.forecast },
-              { label: "Actual", color: COLORS.actual },
+              { label: "Forecast at decision time", color: COLORS.forecast },
+              { label: "Actual (after delivery)", color: COLORS.actual },
               ...(view.hasBand ? [{ label: "Likely range of actual output", color: COLORS.band, kind: "area" }] : []),
             ]} />
             <div className="chart tall">
@@ -161,7 +162,13 @@ export default function DecisionView({ config, date, setDate, cutoff }) {
             <div className="scroll">
               <table>
                 <thead>
-                  <tr><th>Time (UTC)</th><th>Forecast</th><th>Likely range</th><th>Actual</th><th>Error</th></tr>
+                  <tr>
+                    <th>Time (UTC)</th>
+                    <th>Forecast</th>
+                    <th>Likely range</th>
+                    <th>Actual (after delivery)</th>
+                    <th>Error</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {view.rows.map((r) => (
