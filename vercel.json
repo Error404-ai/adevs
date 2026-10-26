@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "functions": {
+    "backend/app/main.py": {
+      "includeFiles": [
+        "data/**/*.json",
+        "frontend/dist/**"
+      ]
+    }
+  }
+}

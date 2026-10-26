@@ -6,7 +6,7 @@ Data is Elexon BMRS only: `FUELHH` (fuel type `WIND`) and `WINDFOR`. No other se
 
 Public GitHub repo: https://github.com/Error404-ai/adevs
 
-Live app: **not deployed yet**. The Heroku container configuration is included below, but publishing requires access to a hosting account. Do not treat the local Docker URL as a public deployment.
+Live app: **not deployed yet**. The Vercel configuration is included below, but publishing requires linking the repository to a Vercel account. Do not treat the local Docker URL as a public deployment.
 
 AI tools: Cursor and Copilot SDK in VS Code were used to help build, review, and package this application.
 
@@ -29,7 +29,9 @@ scripts/
 DEMO_SCRIPT.md         Recording outline for the customer pitch and technical review
 Dockerfile             Multi-stage: build UI, run API + UI on one port
 docker-compose.yml
-heroku.yml             Heroku container deploy
+pyproject.toml         Vercel FastAPI entrypoint and frontend build command
+requirements.txt       Root dependency entrypoint for Vercel
+vercel.json            Vercel function configuration and bundled data
 ```
 
 ## How the product maps to the brief
@@ -88,21 +90,26 @@ Re-fetch Elexon data (optional; snapshot is already in `data/`):
 python scripts/fetch_data.py
 ```
 
-## Deploy (Heroku container)
+## Deploy (Vercel)
 
-One dyno serves the API and the built React app.
+The React frontend and FastAPI backend deploy together in one Vercel project.
+Vercel runs the frontend build command from `pyproject.toml`, serves the built
+React files through the FastAPI static mount, and deploys the FastAPI app as a
+Python Function. The root `requirements.txt` points to the backend dependencies;
+`vercel.json` includes the JSON snapshot and built frontend in the function bundle.
 
-```bash
-heroku login
-heroku create <app-name>
-heroku stack:set container -a <app-name>
-heroku git:remote -a <app-name>
-git push heroku main
-```
+1. In Vercel, choose **Add New → Project** and import
+   `Error404-ai/adevs` from GitHub.
+2. Use the repository root (`.`) as the project root and **Other** as the
+   framework preset. Keep the build settings defined by the checked-in config.
+3. Deploy. Vercel builds the frontend and Python API together.
+4. Verify the deployment root and `/api/health`, then replace the “Live app”
+   status at the top of this README with the public Vercel URL.
 
-After deployment, open `https://<app-name>.herokuapp.com/api/health` and the app root to verify both the API and UI, then replace the “Live app” status at the top of this README with the public app URL. The URL has intentionally not been filled in until a real deployment is available.
-
-Vercel can host the frontend only. This app’s Python + pandas API does not run on Vercel; use Heroku (or any Docker host) so reviewers get a single working URL.
+Vercel supports [FastAPI as a Python Function](https://vercel.com/docs/frameworks/backend/fastapi).
+This pilot's API and included January data fit the standard function bundle
+limit; Docker Compose remains available for local development and reproducible
+review.
 
 ## API
 
