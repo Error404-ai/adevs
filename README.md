@@ -15,12 +15,10 @@ AI tools: Cursor and Copilot SDK in VS Code were used to help build, review, and
 ```
 backend/
   app/analysis.py      Decision-time join and error metrics
-  app/main.py          FastAPI routes; serves the built UI in production
+  app/main.py          FastAPI API routes; serves UI in local Docker mode
+  data/                Elexon snapshots bundled with the backend service
   requirements.txt
   tests/               Unit tests for no-lookahead and error-band rules
-data/
-  actuals.json         FUELHH WIND, 1 Jan–1 Feb 2026
-  forecasts.json       WINDFOR published 1–31 Jan 2026
 frontend/              React (Vite) UI
 scripts/
   fetch_data.py        Re-download the Elexon snapshot
@@ -29,9 +27,7 @@ scripts/
 DEMO_SCRIPT.md         Recording outline for the customer pitch and technical review
 Dockerfile             Multi-stage: build UI, run API + UI on one port
 docker-compose.yml
-pyproject.toml         Vercel FastAPI entrypoint and frontend build command
-requirements.txt       Root dependency entrypoint for Vercel
-vercel.json            Vercel function configuration and bundled data
+vercel.json            Vercel backend/frontend services and public routing
 ```
 
 ## How the product maps to the brief
@@ -84,7 +80,7 @@ cd backend
 pytest
 ```
 
-Re-fetch Elexon data (optional; snapshot is already in `data/`):
+Re-fetch Elexon data (optional; snapshot is already in `backend/data/`):
 
 ```bash
 python scripts/fetch_data.py
@@ -92,17 +88,19 @@ python scripts/fetch_data.py
 
 ## Deploy (Vercel)
 
-The React frontend and FastAPI backend deploy together in one Vercel project.
-Vercel runs the frontend build command from `pyproject.toml`, serves the built
-React files through the FastAPI static mount, and deploys the FastAPI app as a
-Python Function. The root `requirements.txt` points to the backend dependencies;
-`vercel.json` includes the JSON snapshot and built frontend in the function bundle.
+The React frontend and FastAPI backend deploy as separate Vercel services in
+one project and share one public domain. `/api/*` is routed to the backend,
+while all other paths are routed to the frontend. The browser calls the
+same-origin `/api` paths, so no cross-service binding is needed: the frontend
+is a static Vite app, and Vercel service bindings are for server-side
+service-to-service calls.
 
 1. In Vercel, choose **Add New → Project** and import
    `Error404-ai/adevs` from GitHub.
-2. Use the repository root (`.`) as the project root and **Other** as the
-   framework preset. Keep the build settings defined by the checked-in config.
-3. Deploy. Vercel builds the frontend and Python API together.
+2. Use the repository root (`.`) as the Vercel project root. The checked-in
+   `vercel.json` defines the independent `backend` and `frontend` service roots,
+   frameworks, entrypoint, and public rewrites.
+3. Deploy. Vercel builds the FastAPI backend and Vite frontend separately.
 4. Verify the deployment root and `/api/health`, then replace the “Live app”
    status at the top of this README with the public Vercel URL.
 

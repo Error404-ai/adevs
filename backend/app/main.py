@@ -10,7 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from . import analysis
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = Path(os.getenv("DATA_DIR", ROOT / "data"))
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.getenv("DATA_DIR", BACKEND_DIR / "data"))
 FRONTEND_DIST = Path(os.getenv("FRONTEND_DIST", ROOT / "frontend" / "dist"))
 
 actuals, forecasts = analysis.load_frames(

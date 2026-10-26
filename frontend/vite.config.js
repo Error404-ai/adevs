@@ -1,8 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// In dev, /api calls are proxied to the FastAPI server on :8000.
-// In production the app is served by the backend itself, so /api is same-origin.
+// Locally, mirror the Vercel /api rewrite with the FastAPI dev server.
 export default defineConfig({
   plugins: [react()],
   server: {

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import pandas as pd
 
-D = Path(__file__).resolve().parent.parent / "data"
+D = Path(__file__).resolve().parent.parent / "backend" / "data"
 a = pd.DataFrame(json.loads((D / "actuals.json").read_text()))
 f = pd.DataFrame(json.loads((D / "forecasts.json").read_text()))
 for c in ("startTime", "publishTime"):

@@ -5,8 +5,8 @@ from pathlib import Path
 import requests
 
 BASE = "https://data.elexon.co.uk/bmrs/api/v1/datasets"
-# this file lives in adevs/scripts/, so data goes to adevs/data/
-OUT = Path(__file__).resolve().parent.parent / "data"
+# Keep snapshots inside the independently deployed backend service.
+OUT = Path(__file__).resolve().parent.parent / "backend" / "data"
 OUT.mkdir(exist_ok=True)
 
 

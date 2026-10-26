@@ -1,10 +1,6 @@
-// Same-origin by default (dev proxy / backend-served build).
-// Set VITE_API_URL if the API lives on another host.
-const BASE = import.meta.env.VITE_API_URL ?? "";
-
 export async function getJSON(path, params = {}) {
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE}${path}${qs ? `?${qs}` : ""}`);
+  const res = await fetch(`${path}${qs ? `?${qs}` : ""}`);
   if (!res.ok) {
     let detail = "";
     try {
