@@ -1,12 +1,12 @@
 # Wind forecast review
 
-Pilot web app for a UK energy utility’s day-ahead team. It shows the **national wind forecast that would have been available at purchase time**, then **quantifies how wrong those forecasts were** in January 2026.
+Pilot web app for a UK energy utility's day-ahead team. It shows the **national wind forecast that would have been available at purchase time**, then **quantifies how wrong those forecasts were** in January 2026.
 
 Data is Elexon BMRS only: `FUELHH` (fuel type `WIND`) and `WINDFOR`. No other series.
 
-Public GitHub repo: https://github.com/Error404-ai/adevs
-
-Live app: **not deployed yet**. The Vercel configuration is included below, but publishing requires linking the repository to a Vercel account. Do not treat the local Docker URL as a public deployment.
+- Public GitHub repo: https://github.com/Error404-ai/adevs
+- **Live app: https://adevs-nu.vercel.app**
+- API health check: https://adevs-nu.vercel.app/api/health
 
 AI tools: Cursor and Copilot SDK in VS Code were used to help build, review, and package this application.
 
@@ -17,7 +17,7 @@ backend/
   app/analysis.py      Decision-time join and error metrics
   app/main.py          FastAPI API routes; serves UI in local Docker mode
   data/                Elexon snapshots bundled with the backend service
-  requirements.txt
+  requirements.txt     Runtime dependencies (UTF-8; tests need `pip install pytest`)
   tests/               Unit tests for no-lookahead and error-band rules
 frontend/              React (Vite) UI
 scripts/
@@ -33,17 +33,30 @@ vercel.json            Vercel backend/frontend services and public routing
 ## How the product maps to the brief
 
 1. **Decision view** — for a delivery day, the latest `WINDFOR` published at or before the order cutoff on the previous day (default 09:00 UTC, selectable 06:00–12:00). No look-ahead. Hourly forecasts are held across both settlement half-hours so they line up with `FUELHH`.
-2. **Forecast accuracy** — error = forecast − actual (MW). MAE, RMSE, bias, P90, and splits by day, hour, wind level, and forecast horizon. The shaded “likely range” on the decision chart uses only errors the buyer could already have seen (completed days up to D−2).
+2. **Forecast accuracy** — error = forecast − actual (MW). MAE, RMSE, bias, P90, and splits by day, hour, wind level, and forecast horizon. The shaded "likely range" on the decision chart uses only errors the buyer could already have seen (completed days up to D−2).
 
 The cutoff is a product assumption (review in the morning before the GB day-ahead auction). In January the N2EX gate is 11:00 UTC; the control lets a buyer match their own process.
 
 Delivery window: **2 Jan 2026 – 1 Feb 2026** (orders placed 1–31 Jan).
 
-At the default 09:00 UTC cutoff, the pilot compares 1,488 half-hour points. In this snapshot MAE is about 2,042 MW, mean bias is +1,748 MW (forecast too high), and the 90th percentile absolute error is about 4,140 MW. These are retrospective pilot results, not a live trading recommendation.
+### Headline results (default 09:00 UTC cutoff)
+
+The pilot compares 1,488 half-hour points.
+
+| Measure | Value |
+|---|---|
+| MAE (typical miss) | about 2,042 MW |
+| RMSE | about 2,509 MW |
+| Mean bias | +1,748 MW (forecast too high), 15.5% of actual output |
+| P90 absolute error | about 4,140 MW |
+| Days over-forecast | 27 of 31 |
+| MAE if the average bias were removed | about 1,381 MW |
+
+These are retrospective pilot results, not a live trading recommendation.
 
 ## How to start
 
-### Docker (preferred)
+### Docker (preferred for local review)
 
 ```bash
 docker compose up --build
@@ -73,14 +86,19 @@ npm run dev
 
 Open http://localhost:5173 (Vite proxies `/api` to port 8000).
 
-Tests:
+### Tests
+
+`pytest` is a development dependency and is not in `backend/requirements.txt`, so the deployed function stays small.
 
 ```bash
 cd backend
+pip install pytest
 pytest
 ```
 
-Re-fetch Elexon data (optional; snapshot is already in `backend/data/`):
+### Re-fetch Elexon data
+
+Optional; the snapshot is already in `backend/data/`.
 
 ```bash
 python scripts/fetch_data.py
@@ -100,14 +118,24 @@ service-to-service calls.
 2. Use the repository root (`.`) as the Vercel project root. The checked-in
    `vercel.json` defines the independent `backend` and `frontend` service roots,
    frameworks, entrypoint, and public rewrites.
-3. Deploy. Vercel builds the FastAPI backend and Vite frontend separately.
-4. Verify the deployment root and `/api/health`, then replace the “Live app”
-   status at the top of this README with the public Vercel URL.
+3. In **Settings → Build and Deployment**, set the project framework to
+   **Services**. Vercel only builds a project as services when this setting is
+   selected and `vercel.json` has a `services` key.
+4. Deploy. Vercel builds the FastAPI backend and Vite frontend separately.
+5. Verify `/api/health`. The bundled snapshot returns
+   `{"status":"ok","actual_rows":1536,"forecast_rows":36208}`.
 
-Vercel supports [FastAPI as a Python Function](https://vercel.com/docs/frameworks/backend/fastapi).
-This pilot's API and included January data fit the standard function bundle
-limit; Docker Compose remains available for local development and reproducible
-review.
+Notes:
+
+- `backend/requirements.txt` must be saved as **UTF-8**. A UTF-16 file (for
+  example from PowerShell's `>` redirect) makes the Vercel build fail with a
+  `PYTHON_REQUIREMENTS_PARSE_ERROR`.
+- The Vite build prints a chunk-size warning (about 580 kB). It is harmless
+  for this pilot.
+- Vercel supports [FastAPI as a Python Function](https://vercel.com/docs/frameworks/backend/fastapi).
+  This pilot's API and included January data fit the standard function bundle
+  limit; Docker Compose remains available for local development and
+  reproducible review.
 
 ## API
 
@@ -120,3 +148,10 @@ review.
 | `GET /api/error-by-horizon` | Error vs forecast lead time |
 | `GET /api/error-by-hour?cutoff_hour=9` | Error by hour of delivery day |
 | `GET /api/error-by-level?cutoff_hour=9` | Error by actual wind quartile |
+
+## Scope and limits
+
+- National GB wind only, January 2026 only.
+- The order cutoff is an assumption and is configurable (06:00–12:00 UTC).
+- The "likely range" is the forecast shifted by the 10th and 90th percentile of earlier forecast errors. It is a rough planning aid, not a calibrated prediction interval.
+- Validate the buyer's real decision cutoff and the interpretation of the error band with the trading team before any operational use.
